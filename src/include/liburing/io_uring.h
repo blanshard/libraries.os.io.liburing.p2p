@@ -30,6 +30,7 @@ struct io_uring_sqe {
 	union {
 		__u64	addr;	/* pointer to buffer or iovecs */
 		__u64	splice_off_in;
+		__s32   fd_dma_buf;   /* New fd based approach for DMA buffers */
 	};
 	__u32	len;		/* buffer size or number of iovecs */
 	union {
@@ -113,6 +114,8 @@ enum {
 	IORING_OP_FSYNC,
 	IORING_OP_READ_FIXED,
 	IORING_OP_WRITE_FIXED,
+	IORING_OP_READ_DMA,
+	IORING_OP_WRITE_DMA,
 	IORING_OP_POLL_ADD,
 	IORING_OP_POLL_REMOVE,
 	IORING_OP_SYNC_FILE_RANGE,
