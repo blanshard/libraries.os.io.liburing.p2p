@@ -7,9 +7,11 @@
 #include <sys/ioctl.h>
 #include <liburing.h>
 #include <string.h>
+#include "../dma-buf-exporter-kmd/dma_buf_exporter_kmd.h"
 
 #define URING_QD 8
 
+#if 0
 /* TBD: copied common code from dma-exporter code, include header file when available */
 struct dma_exporter_buf_alloc_data {
 	uint32_t fd;
@@ -24,6 +26,7 @@ struct dma_exporter_buf_alloc_data {
 
 #define DMA_BUF_EXPORTER_FREE     _IOWR(DMA_BUF_EXPORTER_MAGIC, 8, \
 					struct dma_exporter_buf_alloc_data)
+#endif
 
 struct global_context {
 	struct io_uring *ring;
