@@ -283,7 +283,7 @@ static inline void io_uring_prep_rw(int op, struct io_uring_sqe *sqe, int fd,
 	sqe->buf_index = 0;
 	sqe->personality = 0;
 	sqe->file_index = 0;
-	sqe->__pad2[0] = sqe->__pad2[1] = 0;
+	sqe->__pad = sqe->__pad2 = 0;
 }
 
 /**
@@ -333,20 +333,22 @@ static inline void io_uring_prep_tee(struct io_uring_sqe *sqe,
 }
 
 static inline void io_uring_prep_rw_dma(int op, struct io_uring_sqe *sqe, int fd,
-                                        int fd_dma_buf, unsigned len, off_t offset)
+				    const void *addr, unsigned len, __u64 offset,
+					int fd_dma_buf)
 {
-        sqe->opcode = (__u8) op;
-        sqe->flags = 0;
-        sqe->ioprio = 0;
-        sqe->fd = fd;
-        sqe->off = offset;
-        sqe->fd_dma_buf = fd_dma_buf;
-        sqe->len = len;
-        sqe->rw_flags = 0;
-        sqe->buf_index = 0;
-        sqe->personality = 0;
-        sqe->file_index = 0;
-        sqe->__pad2[0] = sqe->__pad2[1] = 0;
+	sqe->opcode = (__u8) op;
+	sqe->flags = 0;
+	sqe->ioprio = 0;
+	sqe->fd = fd;
+	sqe->off = offset;
+	sqe->addr = (unsigned long) addr;
+	sqe->len = len;
+	sqe->rw_flags = 0;
+	sqe->buf_index = 0;
+	sqe->personality = 0;
+	sqe->file_index = 0;
+	sqe->fd_dma_buf = fd_dma_buf;	
+	sqe->__pad = sqe->__pad2 = 0;
 }
 
 static inline void io_uring_prep_readv(struct io_uring_sqe *sqe, int fd,
@@ -395,14 +397,18 @@ static inline void io_uring_prep_write_fixed(struct io_uring_sqe *sqe, int fd,
 	sqe->buf_index = (__u16) buf_index;
 }
 
-static inline void io_uring_prep_read_dma(struct io_uring_sqe *sqe, int fd, int fd_dma_buf, off_t offset, unsigned int len)
+static inline void io_uring_prep_read_dma(struct io_uring_sqe *sqe, int fd,
+				    	 void *buf, unsigned nbytes, __u64 offset,
+					   	 int fd_dma_buf)
 {
-       io_uring_prep_rw_dma(IORING_OP_READ_DMA, sqe, fd, fd_dma_buf, offset, len);
+    io_uring_prep_rw_dma(IORING_OP_READ_DMA, sqe, fd, buf, nbytes, offset, fd_dma_buf); 
 }
 
-static inline void io_uring_prep_write_dma(struct io_uring_sqe *sqe, int fd, int fd_dma_buf, off_t offset, unsigned int len)
+static inline void io_uring_prep_write_dma(struct io_uring_sqe *sqe, int fd,
+				       const void *buf, unsigned nbytes, __u64 offset,
+					   int fd_dma_buf)
 {
-       io_uring_prep_rw_dma(IORING_OP_WRITE_DMA, sqe, fd, fd_dma_buf, offset, len);
+    io_uring_prep_rw_dma(IORING_OP_WRITE_DMA, sqe, fd, buf, nbytes, offset, fd_dma_buf);
 }
 
 static inline void io_uring_prep_recvmsg(struct io_uring_sqe *sqe, int fd,

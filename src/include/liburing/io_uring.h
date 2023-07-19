@@ -30,7 +30,6 @@ struct io_uring_sqe {
 	union {
 		__u64	addr;	/* pointer to buffer or iovecs */
 		__u64	splice_off_in;
-		__s32   fd_dma_buf;   /* New fd based approach for DMA buffers */
 	};
 	__u32	len;		/* buffer size or number of iovecs */
 	union {
@@ -65,7 +64,10 @@ struct io_uring_sqe {
 		__s32	splice_fd_in;
 		__u32	file_index;
 	};
-	__u64	__pad2[2];
+	__s32   fd_dma_buf;   /* dma_buf fd */
+	__u32   __pad;	
+	__u64	__pad2;
+
 };
 
 enum {
