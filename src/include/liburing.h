@@ -399,16 +399,18 @@ static inline void io_uring_prep_write_fixed(struct io_uring_sqe *sqe, int fd,
 
 static inline void io_uring_prep_read_dma(struct io_uring_sqe *sqe, int fd,
 				    	 void *buf, unsigned nbytes, __u64 offset,
-					   	 int fd_dma_buf)
+					   	 int fd_dma_buf, int buf_index)
 {
-    io_uring_prep_rw_dma(IORING_OP_READ_DMA, sqe, fd, buf, nbytes, offset, fd_dma_buf); 
+    io_uring_prep_rw_dma(IORING_OP_READ_DMA, sqe, fd, buf, nbytes, offset, fd_dma_buf);
+	sqe->buf_index = (__u16) buf_index;
 }
 
 static inline void io_uring_prep_write_dma(struct io_uring_sqe *sqe, int fd,
 				       const void *buf, unsigned nbytes, __u64 offset,
-					   int fd_dma_buf)
+					   int fd_dma_buf, int buf_index)
 {
     io_uring_prep_rw_dma(IORING_OP_WRITE_DMA, sqe, fd, buf, nbytes, offset, fd_dma_buf);
+	sqe->buf_index = (__u16) buf_index;
 }
 
 static inline void io_uring_prep_recvmsg(struct io_uring_sqe *sqe, int fd,

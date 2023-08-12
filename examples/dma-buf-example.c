@@ -72,7 +72,7 @@ int init_global_ctxt(int argc, char *argv[])
 	}
 	g_ctxt->qdepth = URING_QD;
 
-	g_ctxt->fd_io_device = open(argv[1], O_RDWR);
+	g_ctxt->fd_io_device = open(argv[1], O_RDWR | O_DIRECT);
 	if (g_ctxt->fd_io_device < 0) {
 		printf("Unable to open fd for io device %s\n", argv[1]);
 		return -1;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 	printf("-------------io_uring prep: ------------\n");
 	printf("fd_io_device: %d \n", 	g_ctxt->fd_io_device);
 	printf("fd_dmabuf: %d \n", 		g_ctxt->fd_dmabuf);
-	printf("offset: %d \n", 		g_ctxt->offset);	
+	printf("offset: %lu \n", 		g_ctxt->offset);	
 	printf("write: %d \n", 			g_ctxt->write);
 	printf("len: %d \n", 			g_ctxt->len);
 
@@ -160,6 +160,11 @@ int main(int argc, char *argv[])
 
 	void *buf;
 	posix_memalign(&buf, 4096, g_ctxt->len);
+
+	//buf = malloc(g_ctxt->len);
+
+	memset(buf, '0xAA', 64);
+	printf("buf: %x\n", buf);	
 
 	iov.iov_base = buf;
 	iov.iov_len  = g_ctxt->len;	
@@ -180,18 +185,33 @@ int main(int argc, char *argv[])
 
 	printf("buf: %x\n", buf);
 
+    ret = io_uring_register_buffers(g_ctxt->ring, &iov, 1);
+    if(ret) {
+        fprintf(stderr, "Error registering buffers: %s", strerror(-ret));
+        return 1;
+    }
+
+	/*
 	if (g_ctxt->write) {
-		io_uring_prep_write_dma(sqe, g_ctxt->fd_io_device, buf, g_ctxt->len, g_ctxt->offset, g_ctxt->fd_dmabuf);
+		io_uring_prep_write_fixed(sqe, g_ctxt->fd_io_device, iov.iov_base, g_ctxt->len, 0, 0);
+
 	} else {
-		io_uring_prep_read_dma(sqe, g_ctxt->fd_io_device, buf, g_ctxt->len, g_ctxt->offset, g_ctxt->fd_dmabuf);
+		io_uring_prep_read_fixed(sqe, g_ctxt->fd_io_device, iov.iov_base, g_ctxt->len, 0, 0);
+	}
+	*/
+
+	if (g_ctxt->write) {
+		io_uring_prep_write_dma(sqe, g_ctxt->fd_io_device, buf, g_ctxt->len, g_ctxt->offset, g_ctxt->fd_dmabuf, 0);
+	} else {
+		io_uring_prep_read_dma(sqe, g_ctxt->fd_io_device, buf, g_ctxt->len, g_ctxt->offset, g_ctxt->fd_dmabuf, 0);
 	}
 
 	printf("sqe->opcode %d\n", sqe->opcode);
 	printf("sqe->flags %d\n", sqe->flags);
 	printf("sqe->ioprio %d\n", sqe->ioprio);
 	printf("sqe->fd %d\n", sqe->fd);
-	printf("sqe->off %d\n", sqe->off);
-	printf("sqe->addr %x\n", sqe->addr);
+	printf("sqe->off %llu\n", sqe->off);
+	printf("sqe->addr %llx\n", sqe->addr);
 	printf("sqe->len %d\n", sqe->len);
 	printf("sqe->rw_flags %d\n", sqe->rw_flags);
 	printf("sqe->buf_index %d\n", sqe->buf_index);
@@ -220,7 +240,7 @@ int main(int argc, char *argv[])
 	printf("cqe res: %d %s\n", cqe->res, strerror(-cqe->res));
 
 	printf("---result-----\n");
-	printf("%.*s \n", 4096, buf);
+	printf("%.*s \n", 4096, (char *)buf);
 
     if (ioctl(g_ctxt->fd_dmabuf_exporter_dev, DMA_BUF_EXPORTER_FREE, &g_ctxt->data) != 0) {
 		printf("Unable to deallocate dma buffer\n");
